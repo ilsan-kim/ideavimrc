@@ -55,8 +55,8 @@ vnoremap < <gv
 vnoremap > >gv
 
 """ Navigate methods
-map [[ <Action>(MethodUp)
-map ]] <Action>(MethodDown)
+map mb <Action>(MethodUp)
+map mn <Action>(MethodDown)
 
 """ Collapse different regions
 map zc <Action>(CollapseRegion)
@@ -64,7 +64,7 @@ map zo <Action>(ExpandRegion)
 map <leader>zc <Action>(CollapseAllRegions)
 map <leader>zo <Action>(ExpandAllRegions)
 
-map <leader>r <Action>(Refactorings.QuickListPopupAction)
+map <leader>rn <Action>(Refactorings.QuickListPopupAction)
 map <leader>= <Action>(ReformatCode)
 map <leader>o <Action>(OptimizeImports)
 
@@ -117,3 +117,4 @@ nnoremap BN :bn<CR>
 nnoremap os :action SelectInProjectView<CR>
 nnoremap gs :action GotoTypeDeclaration<CR>
 nnoremap BD :bd<CR>
+nnoremap <leader>rb :action Vcs.RollbackChangedLines<CR>
