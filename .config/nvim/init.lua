@@ -48,6 +48,8 @@ require('packer').startup(function(use)
   use {'folke/tokyonight.nvim'}
   use {'junegunn/seoul256.vim'}
   use {'catppuccin/nvim', as = 'catppuccin'}
+  use { "bluz71/vim-moonfly-colors", name = "moonfly", lazy = false, priority = 1000 }
+
   -- multi cusor ?
   use {'mg979/vim-visual-multi'}
 
@@ -57,12 +59,39 @@ require('packer').startup(function(use)
 
   -- telescope
   use {
-    'nvim-telescope/telescope.nvim', tag = '0.1.2',
-	requires = { {'nvim-lua/plenary.nvim'} }
+    'nvim-telescope/telescope.nvim',
+	requires = { 
+	  {'nvim-lua/plenary.nvim'},
+          {"nvim-telescope/telescope-live-grep-args.nvim"},
+        },
+	config = function()
+	  require("telescope").load_extension("live_grep_args")
+        end
   }
 
+  -- chatgpt.nvim
+  use({
+  "jackMort/ChatGPT.nvim",
+    config = function()
+      require("chatgpt").setup({
+        openai_params = {
+          model = "gpt-4",
+	  max_tokens = 3000,
+	},
+	openai_edit_params = {
+          model = "gpt-4"
+	}
+      })
+    end,
+    requires = {
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim"
+    }
+})
 
 end)
+
 
 -- `on_attach` callback will be called after a language server
 -- instance has been attached to an open buffer with matching filetype
@@ -94,6 +123,27 @@ require('lspconfig').elixirls.setup {
   on_attach = on_attach,
   capabilities = capabilities
 }
+
+-- setting up emmet-ls
+-- https://github.com/aca/emmet-ls
+local lspconfig = require('lspconfig')
+local configs = require('lspconfig/configs')
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true
+
+lspconfig.emmet_ls.setup({
+    -- on_attach = on_attach,
+    capabilities = capabilities,
+    filetypes = { "css", "eruby", "html", "javascript", "javascriptreact", "less", "sass", "scss", "svelte", "pug", "typescriptreact", "vue", "elixir", "eelixir", "heex"},
+    init_options = {
+      html = {
+        options = {
+          -- For possible options, see: https://github.com/emmetio/emmet/blob/master/src/config.ts#L79-L267
+          ["bem.enabled"] = true,
+        },
+      },
+    }
+})
 
 local cmp = require'cmp'
 
@@ -158,9 +208,9 @@ require'nvim-treesitter.configs'.setup {
 -- color scheme setting
 -- vim.cmd[[colorscheme tokyonight-storm]]
 -- vim.cmd("colo seoul256")
-vim.cmd.colorscheme "catppuccin-latte"
+-- vim.cmd.colorscheme "catppuccin-latte"
 -- vim.cmd("set background=dark")
-
+vim.cmd.colorscheme "moonfly"
 
 -- nvim tree
 local function my_on_attach(bufnr)
@@ -206,13 +256,15 @@ require("nvim-tree").setup {
 vim.api.nvim_set_keymap('n', 'os', ':NvimTreeFindFile<CR>', { noremap = true})
 vim.api.nvim_set_keymap('n', '<leader>t', ':NvimTreeToggle<CR>', { noremap = true})
 vim.api.nvim_set_keymap('n', 'SL', ':Buffers<CR>', { silent = true })
+vim.api.nvim_set_keymap('n', 'rd', ':redo<CR>', { noremap = trur })
 vim.api.nvim_set_option("clipboard","unnamed")
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>ff', builtin.find_files, {})
-vim.keymap.set('n', '<leader>fg', builtin.live_grep, {})
+--vim.keymap.set('n', '<leader>fg', builtin.live_grep, { noremap = true })
 vim.keymap.set('n', '<leader>fb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>fh', builtin.help_tags, {})
+vim.keymap.set("n", "<leader>fg", ":lua require('telescope').extensions.live_grep_args.live_grep_args()<CR>")
 
 -- Set line numbers
 vim.o.number = true
@@ -228,4 +280,15 @@ vim.api.nvim_set_keymap('i', '<C-l>', '<Right>', { noremap = true, silent = true
 -- go back go forward
 vim.api.nvim_set_keymap('n', 'gb', '<C-o>', {noremap = true})
 vim.api.nvim_set_keymap('n', 'gf', '<C-i>', {noremap = true})
+
+-- chatgpt shortcut
+vim.api.nvim_set_keymap('v', '<leader>cc', ':ChatGPTRun complete_code<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>ds', ':ChatGPTRun docstring<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>ec', ':ChatGPTRun explain_code<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>gc', ':ChatGPTRun grammar_correction<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>sm', ':ChatGPTRun summarize<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>oc', ':ChatGPTRun optimize_code<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>at', ':ChatGPTRun add_tests<CR>', {})
+vim.api.nvim_set_keymap('v', '<leader>ei', ':ChatGPTEditWithInstructions<CR>', {})
+vim.api.nvim_set_keymap('n', '<leader>gpt', ':ChatGPT<CR>', {})
 
