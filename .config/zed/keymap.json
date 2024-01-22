@@ -1,10 +1,18 @@
 [
   {
+    "bindings": {
+      "shift-t": "terminal_panel::ToggleFocus"
+    }
+  },
+  {
     "context": "Editor && VimControl && !VimWaiting && !menu",
     "bindings": {
       // put key-bindings here if you want them to work in normal & visual mode
       "f": null,
       "o": null,
+      "shift-b": null,
+      "shift-d": null,
+      "shift-b shift-d": "pane::CloseActiveItem",
       "f u": "editor::FindAllReferences",
       "g d": "editor::GoToDefinition",
       "g b": "pane::GoBack",
@@ -13,6 +21,7 @@
       "f g": "workspace::NewSearch",
       "shift-k": "editor::Hover",
       "\\ t": "project_panel::ToggleFocus",
+      "f o": "project_panel::ToggleFocus",
       "\\ n": "pane::ActivateNextItem",
       "\\ p": "pane::ActivatePrevItem",
       "ctrl-o": "project_symbols::Toggle",
@@ -31,10 +40,29 @@
     }
   },
   {
-    "context": "Editor && vim_mode == normal && !VimWaiting && !menu",
+    "context": "TerminalPanel",
     "bindings": {
-      // put key-bindings here if you want them to work only in normal mode
-      "o": null
+      "ctrl-w": "workspace::ActivateNextPane"
+    }
+  },
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "ctrl-w": "workspace::ActivateNextPane",
+      "left": "project_panel::CollapseSelectedEntry",
+      "right": "project_panel::ExpandSelectedEntry",
+      "cmd-n": "project_panel::NewFile",
+      "alt-cmd-n": "project_panel::NewDirectory",
+      "cmd-x": "project_panel::Cut",
+      "cmd-c": "project_panel::Copy",
+      "cmd-v": "project_panel::Paste",
+      "cmd-alt-c": "project_panel::CopyPath",
+      "alt-cmd-shift-c": "project_panel::CopyRelativePath",
+      "space": "project_panel::Rename",
+      "enter": "project_panel::Open",
+      "backspace": "project_panel::Delete",
+      "alt-cmd-r": "project_panel::RevealInFinder",
+      "alt-shift-f": "project_panel::NewSearchInDirectory"
     }
   },
   {
