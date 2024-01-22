@@ -72,9 +72,9 @@ map <c-r> <Action>(RecentFiles)
 map <leader>l <Action>(RecentLocations)
 map <leader>h <Action>(LocalHistory.ShowHistory)
 
-nnoremap <c-/> :action FindInPath<CR>
+nnoremap <leader>fg :action FindInPath<CR>
 nnoremap <c-c> :action GotoClass<CR>
-nnoremap <c-f> :action GotoFile<CR>
+nnoremap <leader>ff :action GotoFile<CR>
 nnoremap <c-o> :action GotoSymbol<CR>
 
 map ge <Action>(GotoNextError)
@@ -85,8 +85,8 @@ nnoremap gm :action GotoSuperMethod<CR>
 nnoremap gt :action GotoTest<CR>
 nnoremap gb :action Back<CR>
 nnoremap gf :action Forward<CR>
-nnoremap gt :action NextTab<CR>
-nnoremap gT :action PreviousTab<CR>
+nnoremap <leader>n :action NextTab<CR>
+nnoremap <leader>p :action PreviousTab<CR>
 
 nnoremap fu :action FindUsages<CR>
 nnoremap ch :action CallHierarchy<CR>
@@ -108,13 +108,13 @@ map mc <A-n>
 map mx <A-x>
 map mp <A-p>
 
-
 """ Custom
 nnoremap gp :action ParameterInfo<CR>
 nnoremap <leader>t :NERDTree<CR>
 nnoremap BP :bp<CR>
 nnoremap BN :bn<CR>
-nnoremap os :action SelectInProjectView<CR>
+nnoremap fo :action SelectInProjectView<CR>
 nnoremap gs :action GotoTypeDeclaration<CR>
 nnoremap BD :bd<CR>
 nnoremap <leader>rb :action Vcs.RollbackChangedLines<CR>
+nnoremap <leader>r :redo<CR>
