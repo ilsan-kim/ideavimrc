@@ -1,0 +1,52 @@
+[
+  {
+    "context": "Editor && VimControl && !VimWaiting && !menu",
+    "bindings": {
+      // put key-bindings here if you want them to work in normal & visual mode
+      "f": null,
+      "o": null,
+      "f u": "editor::FindAllReferences",
+      "g d": "editor::GoToDefinition",
+      "g b": "pane::GoBack",
+      "g f": "pane::GoForward",
+      "f f": "file_finder::Toggle",
+      "f g": "workspace::NewSearch",
+      "shift-k": "editor::Hover",
+      "\\ t": "project_panel::ToggleFocus",
+      "\\ n": "pane::ActivateNextItem",
+      "\\ p": "pane::ActivatePrevItem",
+      "ctrl-o": "project_symbols::Toggle",
+      "g e": "editor::GoToDiagnostic",
+      "g shift-e": "editor::GoToPrevDiagnostic",
+      "\\ e": "diagnostics::Deploy",
+      "\\ r": "editor::Redo",
+      "g t": "editor::GoToTypeDefinition",
+      "g n": "editor::Rename"
+    }
+  },
+  {
+    "context": "Editor && showing_completions",
+    "bindings": {
+      "tab": "vim::Down"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal && !VimWaiting && !menu",
+    "bindings": {
+      // put key-bindings here if you want them to work only in normal mode
+      "o": null
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual && !VimWaiting && !menu",
+    "bindings": {
+      // visual, visual line & visual block modes
+    }
+  },
+  {
+    "context": "Editor && vim_mode == insert && !menu",
+    "bindings": {
+      // put key-bindings here if you want them to work in insert mode
+    }
+  }
+]
