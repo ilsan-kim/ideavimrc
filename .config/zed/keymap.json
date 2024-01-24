@@ -1,10 +1,5 @@
 [
   {
-    "bindings": {
-      "shift-t": "terminal_panel::ToggleFocus"
-    }
-  },
-  {
     "context": "Editor && VimControl && !VimWaiting && !menu",
     "bindings": {
       // put key-bindings here if you want them to work in normal & visual mode
@@ -30,7 +25,12 @@
       "\\ e": "diagnostics::Deploy",
       "\\ r": "editor::Redo",
       "g t": "editor::GoToTypeDefinition",
-      "g n": "editor::Rename"
+      "g n": "editor::Rename",
+      "\\ right": "pane::SplitRight",
+      "ctrl-w": "workspace::ActivateNextPane",
+      "ctrl-down": "editor::AddSelectionBelow",
+      "ctrl-up": "editor::AddSelectionAbove",
+      "m n": "terminal_panel::ToggleFocus"
     }
   },
   {
