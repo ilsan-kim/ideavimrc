@@ -119,7 +119,7 @@ local capabilities = require('cmp_nvim_lsp').default_capabilities()
 -- setting up the elixir language server
 -- you have to manually specify the entrypoint cmd for elixir-ls
 require('lspconfig').elixirls.setup {
-  cmd = {  vim.fn.expand("~/.config/nvim/ls/language_server.sh") },
+  cmd = {  vim.fn.expand("~/.config/nvim/elixir-ls/scripts/language_server.sh") },
   on_attach = on_attach,
   capabilities = capabilities
 }
@@ -225,8 +225,8 @@ local function my_on_attach(bufnr)
 
   -- custom mappings
   vim.keymap.set('n', '?',     api.tree.toggle_help,                  opts('Help'))
-  vim.api.nvim_set_keymap('n', 'BP', ':bp<CR>', { noremap = true, silent = true })
-  vim.api.nvim_set_keymap('n', 'BN', ':bn<CR>', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<leader>p', ':bp<CR>', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<leader>n', ':bn<CR>', { noremap = true, silent = true })
   vim.api.nvim_set_keymap('n', "BD", ':bd<CR>', { noremap = true, silent = true })
 end
 
@@ -253,7 +253,7 @@ require("nvim-tree").setup {
   on_attach = my_on_attach,
   ---
 }
-vim.api.nvim_set_keymap('n', 'os', ':NvimTreeFindFile<CR>', { noremap = true})
+vim.api.nvim_set_keymap('n', 'fo', ':NvimTreeFindFile<CR>', { noremap = true})
 vim.api.nvim_set_keymap('n', '<leader>t', ':NvimTreeToggle<CR>', { noremap = true})
 vim.api.nvim_set_keymap('n', 'SL', ':Buffers<CR>', { silent = true })
 vim.api.nvim_set_keymap('n', 'rd', ':redo<CR>', { noremap = trur })
@@ -291,4 +291,3 @@ vim.api.nvim_set_keymap('v', '<leader>oc', ':ChatGPTRun optimize_code<CR>', {})
 vim.api.nvim_set_keymap('v', '<leader>at', ':ChatGPTRun add_tests<CR>', {})
 vim.api.nvim_set_keymap('v', '<leader>ei', ':ChatGPTEditWithInstructions<CR>', {})
 vim.api.nvim_set_keymap('n', '<leader>gpt', ':ChatGPT<CR>', {})
-
