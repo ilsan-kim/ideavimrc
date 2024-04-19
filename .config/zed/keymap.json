@@ -4,7 +4,6 @@
     "bindings": {
       // put key-bindings here if you want them to work in normal & visual mode
       "f": null,
-      "o": null,
       "shift-b": null,
       "shift-d": null,
       "shift-b shift-d": "pane::CloseActiveItem",
@@ -30,7 +29,8 @@
       "ctrl-w": "workspace::ActivateNextPane",
       "ctrl-down": "editor::AddSelectionBelow",
       "ctrl-up": "editor::AddSelectionAbove",
-      "m n": "terminal_panel::ToggleFocus"
+      "m n": "terminal_panel::ToggleFocus",
+      "g i": "editor::GoToImplementation"
     }
   },
   {
