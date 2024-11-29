@@ -45,18 +45,19 @@ map <c-=> <Action>(UnsplitAll)
 map <leader>en <Action>(EditSourceInNewWindow)
 nnoremap <c-x> :action HideAllWindows<CR>
 map <leader>mm <Action>(MaximizeEditorInSplit)
-map <leader>st <Action>(StretchSplitToTop)
-map <leader>sb <Action>(StretchSplitToBottom)
-map <leader>sl <Action>(StretchSplitToLeft)
-map <leader>sr <Action>(StretchSplitToRight)
+map <leader>sk <Action>(StretchSplitToTop)
+map <leader>sj <Action>(StretchSplitToBottom)
+map <leader>sh <Action>(StretchSplitToLeft)
+map <leader>sl <Action>(StretchSplitToRight)
+map <leader>sw <Action>(Switcher)
 
 """ Keep visual selection
 vnoremap < <gv
 vnoremap > >gv
 
 """ Navigate methods
-map mb <Action>(MethodUp)
-map mn <Action>(MethodDown)
+map <leader>mb <Action>(MethodUp)
+map <leader>mn <Action>(MethodDown)
 
 """ Collapse different regions
 map zc <Action>(CollapseRegion)
@@ -98,10 +99,11 @@ nnoremap ,f :action ChooseDebugConfiguration<CR>
 nnoremap ,d :action ContextDebug<CR>
 nnoremap ,u :action Rerun<CR>
 nnoremap ,b :action ToggleLineBreakpoint<CR>
+nnoremap <leader>rt :action RunClass<CR>
 map <leader>m <Action>(RunAnything)
 
 """ IdeaVim development stuff
-set ideastrictmode
+""" set ideastrictmode
 
 """ Multiple Cursors
 map mc <A-n>
@@ -118,3 +120,6 @@ nnoremap gs :action GotoTypeDeclaration<CR>
 nnoremap BD :bd<CR>
 nnoremap <leader>rb :action Vcs.RollbackChangedLines<CR>
 nnoremap <leader>r :redo<CR>
+nnoremap <c-w> :action ActivateFindToolWindow<CR>
+nnoremap mn :action ActivateTerminalToolWindow<CR>
+nnoremap <leader>sh :action Git.Menu<CR>
