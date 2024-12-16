@@ -1,5 +1,18 @@
 [
   {
+    "context": "Workspace",
+    "bindings": {
+      "esc": "workspace::ActivateNextPane",
+      "ctrl-w": "workspace::ActivateNextPane"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-w": "terminal_panel::ToggleFocus"
+    }
+  },
+  {
     "context": "Editor && VimControl && !VimWaiting && !menu",
     "bindings": {
       // put key-bindings here if you want them to work in normal & visual mode
@@ -11,8 +24,8 @@
       "g d": "editor::GoToDefinition",
       "g b": "pane::GoBack",
       "g f": "pane::GoForward",
-      "f f": "file_finder::Toggle",
-      "f g": "workspace::NewSearch",
+      "\\ f f": "file_finder::Toggle",
+      "\\ f g": "workspace::NewSearch",
       "shift-k": "editor::Hover",
       "\\ t": "project_panel::ToggleFocus",
       "f o": "project_panel::ToggleFocus",
@@ -25,24 +38,20 @@
       "\\ r": "editor::Redo",
       "g t": "editor::GoToTypeDefinition",
       "g n": "editor::Rename",
+      "g i": "editor::GoToImplementation",
+      "\\ s w": "tab_switcher::Toggle",
       "\\ right": "pane::SplitRight",
       "ctrl-w": "workspace::ActivateNextPane",
       "ctrl-down": "editor::AddSelectionBelow",
       "ctrl-up": "editor::AddSelectionAbove",
       "m n": "terminal_panel::ToggleFocus",
-      "g i": "editor::GoToImplementation"
+      "\\ enter": "editor::OpenExcerpts"
     }
   },
   {
     "context": "Editor && showing_completions",
     "bindings": {
       "tab": "vim::Down"
-    }
-  },
-  {
-    "context": "TerminalPanel",
-    "bindings": {
-      "ctrl-w": "workspace::ActivateNextPane"
     }
   },
   {
@@ -62,7 +71,8 @@
       "enter": "project_panel::Open",
       "backspace": "project_panel::Delete",
       "alt-cmd-r": "project_panel::RevealInFinder",
-      "alt-shift-f": "project_panel::NewSearchInDirectory"
+      "alt-shift-f": "project_panel::NewSearchInDirectory",
+      "\\ f g": "project_panel::NewSearchInDirectory"
     }
   },
   {
