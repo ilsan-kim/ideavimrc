@@ -7,6 +7,14 @@
     }
   },
   {
+    // not working
+    "context": "OutlinePanel",
+    "bindings": {
+      "ctrl-w": "outline_panel::ToggleFocus",
+      "enter": "outline_panel::Open"
+    }
+  },
+  {
     "context": "Terminal",
     "bindings": {
       "ctrl-w": "terminal_panel::ToggleFocus"
@@ -45,7 +53,9 @@
       "ctrl-down": "editor::AddSelectionBelow",
       "ctrl-up": "editor::AddSelectionAbove",
       "m n": "terminal_panel::ToggleFocus",
-      "\\ enter": "editor::OpenExcerpts"
+      "\\ enter": "editor::OpenExcerpts",
+      "ctrl-s": "outline::Toggle",
+      "\\ o l": "outline_panel::ToggleFocus"
     }
   },
   {
@@ -70,7 +80,7 @@
       "space": "project_panel::Rename",
       "enter": "project_panel::Open",
       "backspace": "project_panel::Delete",
-      "alt-cmd-r": "project_panel::RevealInFinder",
+      "alt-cmd-r": "project_panel::RevealInFileManager",
       "alt-shift-f": "project_panel::NewSearchInDirectory",
       "\\ f g": "project_panel::NewSearchInDirectory"
     }
@@ -78,7 +88,9 @@
   {
     "context": "Editor && vim_mode == visual && !VimWaiting && !menu",
     "bindings": {
-      // visual, visual line & visual block modes
+      "d": "vim::VisualDeleteLine",
+      "alt-shift-up": "editor::MoveLineUp",
+      "alt-shift-down": "editor::MoveLineDown"
     }
   },
   {
