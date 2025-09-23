@@ -11,7 +11,7 @@
     "context": "OutlinePanel",
     "bindings": {
       "ctrl-w": "outline_panel::ToggleFocus",
-      "enter": "outline_panel::Open"
+      "enter": "outline_panel::OpenSelectedEntry"
     }
   },
   {
@@ -38,10 +38,10 @@
       "\\ t": "project_panel::ToggleFocus",
       "f o": "project_panel::ToggleFocus",
       "\\ n": "pane::ActivateNextItem",
-      "\\ p": "pane::ActivatePrevItem",
+      "\\ p": "pane::ActivatePreviousItem",
       "ctrl-o": "project_symbols::Toggle",
       "g e": "editor::GoToDiagnostic",
-      "g shift-e": "editor::GoToPrevDiagnostic",
+      "g shift-e": "editor::GoToPreviousDiagnostic",
       "\\ e": "diagnostics::Deploy",
       "\\ r": "editor::Redo",
       "g t": "editor::GoToTypeDefinition",
@@ -55,7 +55,13 @@
       "m n": "terminal_panel::ToggleFocus",
       "\\ enter": "editor::OpenExcerpts",
       "ctrl-s": "outline::Toggle",
-      "\\ o l": "outline_panel::ToggleFocus"
+      "\\ o l": "outline_panel::ToggleFocus",
+      "\\ r t": "task::Spawn",
+      "\\ m p": "markdown::OpenPreviewToTheSide",
+      "\\ r n": "editor::Rename",
+      "\\ a c": "agent::ToggleFocus",
+      "m c": "vim::SelectNext",
+      "alt-enter": "editor::ToggleCodeActions"
     }
   },
   {
@@ -75,8 +81,8 @@
       "cmd-x": "project_panel::Cut",
       "cmd-c": "project_panel::Copy",
       "cmd-v": "project_panel::Paste",
-      "cmd-alt-c": "project_panel::CopyPath",
-      "alt-cmd-shift-c": "project_panel::CopyRelativePath",
+      "cmd-alt-c": "workspace::CopyPath",
+      "alt-cmd-shift-c": "workspace::CopyRelativePath",
       "space": "project_panel::Rename",
       "enter": "project_panel::Open",
       "backspace": "project_panel::Delete",
@@ -88,7 +94,7 @@
   {
     "context": "Editor && vim_mode == visual && !VimWaiting && !menu",
     "bindings": {
-      "d": "vim::VisualDeleteLine",
+      "d": "vim::VisualDelete",
       "alt-shift-up": "editor::MoveLineUp",
       "alt-shift-down": "editor::MoveLineDown"
     }
@@ -97,6 +103,12 @@
     "context": "Editor && vim_mode == insert && !menu",
     "bindings": {
       // put key-bindings here if you want them to work in insert mode
+    }
+  },
+  {
+    "context": "Agent",
+    "bindings": {
+      "\\ a c": "agent::ToggleFocus"
     }
   }
 ]
