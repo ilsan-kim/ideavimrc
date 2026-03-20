@@ -44,7 +44,7 @@
       "g shift-e": "editor::GoToPreviousDiagnostic",
       "\\ e": "diagnostics::Deploy",
       "\\ r": "editor::Redo",
-      "g t": "editor::GoToTypeDefinition",
+      "g s": "editor::GoToTypeDefinition",
       "g n": "editor::Rename",
       "g i": "editor::GoToImplementation",
       "\\ s w": "tab_switcher::Toggle",
@@ -61,7 +61,8 @@
       "\\ r n": "editor::Rename",
       "\\ a c": "agent::ToggleFocus",
       "m c": "vim::SelectNext",
-      "alt-enter": "editor::ToggleCodeActions"
+      "alt-enter": "editor::ToggleCodeActions",
+      "\\ c r": "editor::SplitSelectionIntoLines"
     }
   },
   {
@@ -109,6 +110,17 @@
     "context": "Agent",
     "bindings": {
       "\\ a c": "agent::ToggleFocus"
+    }
+  },
+  {
+    "context": "((vim_mode == helix_normal || vim_mode == helix_select) && !menu)",
+    "bindings": {
+      "\\ c r": [
+        "editor::SplitSelectionIntoLines",
+        {
+          "keep_selections": true
+        }
+      ]
     }
   }
 ]
