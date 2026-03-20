@@ -123,3 +123,7 @@ nnoremap <leader>r :redo<CR>
 nnoremap <c-w> :action ActivateFindToolWindow<CR>
 nnoremap mn :action ActivateTerminalToolWindow<CR>
 nnoremap <leader>sh :action Git.Menu<CR>
+nnoremap <leader>rp :action CopyReference<CR>
+
+map <leader>ac :action ActivateAIAssistantToolWindow<CR>
+map <leader>sv :action NextSplitter<CR>
