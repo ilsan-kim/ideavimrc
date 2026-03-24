@@ -29,6 +29,7 @@ vim.o.smartindent = true
 vim.o.wrap = false
 vim.o.ignorecase = true
 vim.o.smartcase = true
+vim.o.autowriteall = true
 
 -- =============================================================================
 -- Bootstrap lazy.nvim
@@ -47,14 +48,14 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugins
 -- =============================================================================
 require("lazy").setup({
-  -- Theme: Ayu Dark (matching Zed)
+  -- Theme: Tokyo Night Storm
   {
-    "Shatur/neovim-ayu",
+    "folke/tokyonight.nvim",
     lazy = false,
     priority = 1000,
     config = function()
-      require("ayu").setup({ mirage = false })
-      vim.cmd.colorscheme("ayu-dark")
+      vim.o.background = "dark"
+      vim.cmd.colorscheme("tokyonight-storm")
     end,
   },
 
@@ -76,6 +77,7 @@ require("lazy").setup({
       "hrsh7th/cmp-path",
       "hrsh7th/cmp-cmdline",
       "L3MON4D3/LuaSnip",
+      "rafamadriz/friendly-snippets",
       "saadparwaiz1/cmp_luasnip",
     },
   },
@@ -95,7 +97,7 @@ require("lazy").setup({
   -- Telescope (matching Zed file finder / search)
   {
     "nvim-telescope/telescope.nvim",
-    tag = "0.1.8",
+    branch = "master",
     dependencies = { "nvim-lua/plenary.nvim" },
   },
 
@@ -120,6 +122,41 @@ require("lazy").setup({
     end,
   },
 
+  -- Git signs + blame
+  {
+    "lewis6991/gitsigns.nvim",
+    config = function()
+      require("gitsigns").setup({
+        current_line_blame = true,
+      })
+    end,
+  },
+
+  -- Auto pairs
+  {
+    "windwp/nvim-autopairs",
+    event = "InsertEnter",
+    config = function()
+      require("nvim-autopairs").setup()
+    end,
+  },
+
+  -- Formatter
+  {
+    "stevearc/conform.nvim",
+    config = function()
+      require("conform").setup({
+        formatters_by_ft = {
+          go = { "goimports", "gofmt" },
+        },
+        format_on_save = {
+          timeout_ms = 500,
+          lsp_format = "fallback",
+        },
+      })
+    end,
+  },
+
   -- Multi-cursor (matching Zed vim::SelectNext / AddSelectionBelow)
   { "mg979/vim-visual-multi" },
 
@@ -128,7 +165,7 @@ require("lazy").setup({
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
-      require("lualine").setup({ options = { theme = "ayu_dark" } })
+      require("lualine").setup({ options = { theme = "auto" } })
     end,
   },
 
@@ -156,8 +193,11 @@ require("lazy").setup({
 -- =============================================================================
 require("mason").setup()
 require("mason-lspconfig").setup({
-  ensure_installed = { "gopls", "lua_ls" },
+  ensure_installed = { "gopls", "lua_ls", "elixirls" },
 })
+vim.api.nvim_create_user_command("MasonInstallFormatters", function()
+  vim.cmd("MasonInstall goimports")
+end, {})
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
@@ -175,6 +215,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
     map("n", "gi", vim.lsp.buf.implementation, opts)
     map("n", "ge", function() vim.diagnostic.jump({ count = 1 }) end, opts)
     map("n", "gE", function() vim.diagnostic.jump({ count = -1 }) end, opts)
+    map("n", "gp", vim.lsp.buf.signature_help, opts)
     map("n", "<A-CR>", vim.lsp.buf.code_action, opts)
     map("n", "<leader>rn", vim.lsp.buf.rename, opts)
     map("n", "<leader>cr", vim.lsp.buf.rename, opts)
@@ -212,21 +253,18 @@ vim.lsp.config("lua_ls", {
 })
 vim.lsp.enable("lua_ls")
 
--- elixir-ls (if available)
-local elixir_ls_path = vim.fn.expand("~/.config/nvim/ls/language_server.sh")
-if vim.fn.filereadable(elixir_ls_path) == 1 then
-  vim.lsp.config("elixirls", {
-    cmd = { elixir_ls_path },
-    capabilities = capabilities,
-  })
-  vim.lsp.enable("elixirls")
-end
+-- elixir-ls (Mason managed)
+vim.lsp.config("elixirls", {
+  capabilities = capabilities,
+})
+vim.lsp.enable("elixirls")
 
 -- =============================================================================
 -- nvim-cmp Setup
 -- =============================================================================
 local cmp = require("cmp")
 local luasnip = require("luasnip")
+require("luasnip.loaders.from_vscode").lazy_load()
 
 cmp.setup({
   snippet = {
@@ -270,11 +308,11 @@ require("nvim-treesitter").setup()
 -- Auto-install parsers on FileType
 vim.api.nvim_create_autocmd("FileType", {
   callback = function(ev)
+    local ft = ev.match
+    local lang = vim.treesitter.language.get_lang(ft)
+    if not lang then return end
     local ok, _ = pcall(vim.treesitter.start, ev.buf)
     if not ok then
-      -- parser not installed yet, try to install
-      local ft = ev.match
-      local lang = vim.treesitter.language.get_lang(ft) or ft
       pcall(vim.cmd, "TSInstall " .. lang)
     end
   end,
@@ -295,6 +333,9 @@ vim.api.nvim_create_autocmd("User", {
 -- nvim-tree (matching Zed ProjectPanel)
 -- =============================================================================
 require("nvim-tree").setup({
+  git = {
+    ignore = false,
+  },
   on_attach = function(bufnr)
     local api = require("nvim-tree.api")
     local opts = function(desc)
@@ -348,6 +389,8 @@ map("n", "<leader>ol", "<cmd>Outline<CR>", opts)
 
 -- Diagnostics list (Zed: diagnostics::Deploy)
 map("n", "<leader>e", "<cmd>Telescope diagnostics<CR>", opts)
+-- Show line diagnostics
+map({"n", "v"}, "<leader>se", function() vim.diagnostic.open_float() end, opts)
 
 -- Redo (Zed: editor::Redo)
 map("n", "<leader>r", "<C-r>", opts)
