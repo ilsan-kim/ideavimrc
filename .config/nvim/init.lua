@@ -30,6 +30,16 @@ vim.o.wrap = false
 vim.o.ignorecase = true
 vim.o.smartcase = true
 vim.o.autowriteall = true
+vim.o.autoread = true
+
+-- Auto-save & auto-reload every 5 seconds (GoLand-style)
+local timer = vim.uv.new_timer()
+timer:start(5000, 5000, vim.schedule_wrap(function()
+  -- Auto-save modified buffers
+  pcall(vim.cmd, "silent! wall")
+  -- Auto-reload externally changed files
+  pcall(vim.cmd, "checktime")
+end))
 
 -- =============================================================================
 -- Bootstrap lazy.nvim
@@ -48,14 +58,14 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugins
 -- =============================================================================
 require("lazy").setup({
-  -- Theme: Tokyo Night Storm
+  -- Theme: Nightfox
   {
-    "folke/tokyonight.nvim",
+    "EdenEast/nightfox.nvim",
     lazy = false,
     priority = 1000,
     config = function()
       vim.o.background = "dark"
-      vim.cmd.colorscheme("tokyonight-storm")
+      vim.cmd.colorscheme("dayfox")
     end,
   },
 
@@ -132,6 +142,12 @@ require("lazy").setup({
     end,
   },
 
+  -- Git diff viewer (file history, line history)
+  {
+    "sindrets/diffview.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+  },
+
   -- Auto pairs
   {
     "windwp/nvim-autopairs",
@@ -147,10 +163,10 @@ require("lazy").setup({
     config = function()
       require("conform").setup({
         formatters_by_ft = {
-          go = { "goimports", "gofmt" },
+          go = { "goimports" },
         },
         format_on_save = {
-          timeout_ms = 500,
+          timeout_ms = 2000,
           lsp_format = "fallback",
         },
       })
@@ -158,14 +174,32 @@ require("lazy").setup({
   },
 
   -- Multi-cursor (matching Zed vim::SelectNext / AddSelectionBelow)
-  { "mg979/vim-visual-multi" },
+  {
+    "mg979/vim-visual-multi",
+    init = function()
+      vim.g.VM_maps = {
+        ["Find Under"] = "mc",
+        ["Find Subword Under"] = "mc",
+        ["Skip Region"] = "mx",
+        ["Remove Region"] = "mX",
+        ["Add Cursor Down"] = "<C-Down>",
+        ["Add Cursor Up"] = "<C-Up>",
+        ["Visual Cursors"] = "\\\\cr",
+      }
+    end,
+  },
 
   -- Statusline
   {
     "nvim-lualine/lualine.nvim",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
-      require("lualine").setup({ options = { theme = "auto" } })
+      require("lualine").setup({
+        options = { theme = "auto" },
+        sections = {
+          lualine_c = { { "filename", path = 1 } },
+        },
+      })
     end,
   },
 
@@ -175,6 +209,31 @@ require("lazy").setup({
     cmd = { "MarkdownPreviewToggle", "MarkdownPreview" },
     build = "cd app && npm install",
     ft = { "markdown" },
+  },
+
+  -- Neotest (GoLand-style test runner)
+  {
+    "nvim-neotest/neotest",
+    dependencies = {
+      "nvim-neotest/nvim-nio",
+      "nvim-lua/plenary.nvim",
+      "antoinemadec/FixCursorHold.nvim",
+      "nvim-treesitter/nvim-treesitter",
+      "fredrikaverpil/neotest-golang",
+    },
+    config = function()
+      require("neotest").setup({
+        adapters = {
+          require("neotest-golang")({
+            go_test_args = { "-v", "-count=1" },
+            runner = "go",
+          }),
+        },
+        discovery = {
+          enabled = false,
+        },
+      })
+    end,
   },
 
   -- Buffer line (tab bar)
@@ -218,7 +277,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     map("n", "gp", vim.lsp.buf.signature_help, opts)
     map("n", "<A-CR>", vim.lsp.buf.code_action, opts)
     map("n", "<leader>rn", vim.lsp.buf.rename, opts)
-    map("n", "<leader>cr", vim.lsp.buf.rename, opts)
   end,
 })
 
@@ -352,6 +410,9 @@ require("nvim-tree").setup({
 local map = vim.keymap.set
 local opts = { noremap = true, silent = true }
 
+-- Redo (Shift-U)
+map("n", "U", "<C-r>", opts)
+
 -- Pane navigation (Zed: workspace::ActivateNextPane → ctrl-w / esc)
 map("n", "<C-w>", "<C-w>w", opts)
 
@@ -360,9 +421,9 @@ map("n", "<leader>t", ":NvimTreeToggle<CR>", opts)
 map("n", "fo", ":NvimTreeFindFile<CR>", opts)
 
 -- File finder (Zed: file_finder::Toggle)
-map("n", "<leader>ff", "<cmd>Telescope find_files<CR>", opts)
+map("n", "<leader>ff", function() require("telescope.builtin").find_files({ no_ignore = true }) end, opts)
 -- Global search (Zed: workspace::NewSearch)
-map("n", "<leader>fg", "<cmd>Telescope live_grep<CR>", opts)
+map("n", "<leader>fg", function() require("telescope.builtin").live_grep({ additional_args = { "--no-ignore" } }) end, opts)
 -- Buffer / tab switcher (Zed: tab_switcher::Toggle)
 map("n", "<leader>sw", "<cmd>Telescope buffers<CR>", opts)
 
@@ -381,7 +442,7 @@ map("n", "gf", "<C-i>", opts)
 map("n", "<leader><Right>", ":vsplit<CR>", opts)
 
 -- Symbols / outline (Zed: project_symbols::Toggle)
-map("n", "<C-o>", "<cmd>Telescope lsp_document_symbols<CR>", opts)
+map("n", "<leader>fs", "<cmd>Telescope lsp_dynamic_workspace_symbols<CR>", opts)
 -- Outline toggle (Zed: outline::Toggle → ctrl-s)
 map("n", "<C-s>", "<cmd>Outline<CR>", opts)
 -- Outline panel (Zed: outline_panel::ToggleFocus)
@@ -391,6 +452,39 @@ map("n", "<leader>ol", "<cmd>Outline<CR>", opts)
 map("n", "<leader>e", "<cmd>Telescope diagnostics<CR>", opts)
 -- Show line diagnostics
 map({"n", "v"}, "<leader>se", function() vim.diagnostic.open_float() end, opts)
+
+-- Yank relative path with line number (e.g. src/foo.lua:42)
+map("n", "<leader>rp", function()
+  local path = vim.fn.fnamemodify(vim.fn.expand("%"), ":.")
+  local line = vim.fn.line(".")
+  local result = path .. ":" .. line
+  vim.fn.setreg("+", result)
+  vim.notify(result)
+end, opts)
+
+-- Git history of selected lines (diffview.nvim)
+map("v", "<leader>hl", function()
+  local file = vim.fn.expand("%")
+  local start_line = vim.fn.line("v")
+  local end_line = vim.fn.line(".")
+  if start_line > end_line then
+    start_line, end_line = end_line, start_line
+  end
+  vim.cmd("DiffviewFileHistory -L" .. start_line .. "," .. end_line .. ":" .. file)
+end, opts)
+map("n", "<leader>hl", function()
+  vim.cmd("DiffviewFileHistory " .. vim.fn.expand("%"))
+end, opts)
+
+-- Neotest keymaps (GoLand-style test runner)
+map("n", "<leader>tr", function() require("neotest").run.run() end, opts)                -- 커서 위치 테스트 실행
+map("n", "<leader>tf", function() require("neotest").run.run(vim.fn.expand("%")) end, opts) -- 현재 파일 테스트 실행
+map("n", "<leader>to", function() require("neotest").output_panel.toggle() end, opts)    -- 출력 패널 토글
+map("n", "<leader>ts", function() require("neotest").summary.toggle() end, opts)         -- 테스트 요약 패널 토글
+map("n", "<leader>go", function()                                                       -- go run . (현재 파일의 패키지)
+  local dir = vim.fn.expand("%:p:h")
+  require("toggleterm").exec("cd " .. dir .. " && go run .", 1)
+end, opts)
 
 -- Redo (Zed: editor::Redo)
 map("n", "<leader>r", "<C-r>", opts)
@@ -424,15 +518,8 @@ map("i", "<C-j>", "<Down>", opts)
 map("i", "<C-k>", "<Up>", opts)
 map("i", "<C-l>", "<Right>", opts)
 
--- Multi-cursor: vim-visual-multi defaults
--- mc → SelectNext is handled by vim-visual-multi (<C-n> by default)
--- Remap to match Zed's mc
-vim.g.VM_maps = {
-  ["Find Under"] = "mc",
-  ["Find Subword Under"] = "mc",
-  ["Add Cursor Down"] = "<C-Down>",
-  ["Add Cursor Up"] = "<C-Up>",
-}
+-- Multi-cursor: \cr → visual cursors (explicit mapping to prevent c operator)
+map("v", "<leader>cr", "<Plug>(VM-Visual-Cursors)", opts)
 
 -- Disable netrw (nvim-tree replaces it)
 vim.g.loaded_netrw = 1
