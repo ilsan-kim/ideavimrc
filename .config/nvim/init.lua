@@ -9,8 +9,8 @@ vim.g.maplocalleader = "\\"
 -- =============================================================================
 -- Basic Options
 -- =============================================================================
-vim.o.number = true
-vim.o.relativenumber = false
+vim.opt.number = true
+vim.opt.relativenumber = false
 vim.o.encoding = "UTF-8"
 vim.o.clipboard = "unnamed"
 vim.o.termguicolors = true
@@ -31,6 +31,11 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 vim.o.autowriteall = true
 vim.o.autoread = true
+
+-- Treesitter-based folding
+vim.o.foldmethod = "expr"
+vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+vim.o.foldlevel = 99
 
 -- Auto-save & auto-reload every 5 seconds (GoLand-style)
 local timer = vim.uv.new_timer()
@@ -58,14 +63,14 @@ vim.opt.rtp:prepend(lazypath)
 -- Plugins
 -- =============================================================================
 require("lazy").setup({
-  -- Theme: Nightfox
+  -- Theme: Cyberdream
   {
-    "EdenEast/nightfox.nvim",
+    "scottmckendry/cyberdream.nvim",
     lazy = false,
     priority = 1000,
     config = function()
       vim.o.background = "dark"
-      vim.cmd.colorscheme("dayfox")
+      vim.cmd.colorscheme("cyberdream")
     end,
   },
 
@@ -98,6 +103,15 @@ require("lazy").setup({
     build = ":TSUpdate",
   },
 
+  -- Sticky context: show current function/method at top
+  {
+    "nvim-treesitter/nvim-treesitter-context",
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    opts = {
+      max_lines = 3,
+    },
+  },
+
   -- File tree (matching Zed project panel)
   {
     "nvim-tree/nvim-tree.lua",
@@ -128,7 +142,27 @@ require("lazy").setup({
   {
     "hedyhli/outline.nvim",
     config = function()
-      require("outline").setup()
+      require("outline").setup({
+        outline_items = {
+          auto_update_events = {
+            follow = { "CursorMoved" },
+            items = { "InsertLeave", "BufWritePost" },
+          },
+        },
+      })
+      -- Refresh outline only when entering a normal code buffer
+      vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
+        callback = function()
+          local bt = vim.bo.buftype
+          local ft = vim.bo.filetype
+          if bt == "" and ft ~= "NvimTree" and ft ~= "Outline" and ft ~= "OutlineHelp" then
+            local outline = require("outline")
+            if outline.is_open and outline.is_open() then
+              pcall(outline.refresh)
+            end
+          end
+        end,
+      })
     end,
   },
 
@@ -138,6 +172,7 @@ require("lazy").setup({
     config = function()
       require("gitsigns").setup({
         current_line_blame = true,
+        signs_staged_enable = true,
       })
     end,
   },
@@ -236,13 +271,54 @@ require("lazy").setup({
     end,
   },
 
+  -- Claude Code
+  {
+    "greggh/claude-code.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("claude-code").setup({
+        window = {
+          position = "vertical",
+          split_ratio = 0.3,
+        },
+        keymaps = {
+          toggle = {
+            normal = "<leader>ac",
+            terminal = "<leader>ac",
+          },
+        },
+      })
+    end,
+  },
+
+  -- Git conflict resolver
+  {
+    "akinsho/git-conflict.nvim",
+    version = "*",
+    config = function()
+      require("git-conflict").setup({
+        default_mappings = false,
+      })
+    end,
+  },
+
   -- Buffer line (tab bar)
   {
     "akinsho/bufferline.nvim",
     version = "*",
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
-      require("bufferline").setup()
+      require("bufferline").setup({
+        options = {
+          custom_filter = function(buf)
+            local bt = vim.bo[buf].buftype
+            local ft = vim.bo[buf].filetype
+            if bt == "terminal" then return false end
+            if ft == "NvimTree" or ft == "Outline" or ft == "claude-code" then return false end
+            return true
+          end,
+        },
+      })
     end,
   },
 })
@@ -267,11 +343,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
     local map = vim.keymap.set
 
     map("n", "gd", vim.lsp.buf.definition, opts)
-    map("n", "fu", vim.lsp.buf.references, opts)
+    map("n", "fu", function() require("telescope.builtin").lsp_references() end, opts)
     map("n", "K", vim.lsp.buf.hover, opts)
     map("n", "gs", vim.lsp.buf.type_definition, opts)
     map("n", "gn", vim.lsp.buf.rename, opts)
-    map("n", "gi", vim.lsp.buf.implementation, opts)
+    map("n", "gi", function() require("telescope.builtin").lsp_implementations() end, opts)
     map("n", "ge", function() vim.diagnostic.jump({ count = 1 }) end, opts)
     map("n", "gE", function() vim.diagnostic.jump({ count = -1 }) end, opts)
     map("n", "gp", vim.lsp.buf.signature_help, opts)
@@ -323,6 +399,7 @@ vim.lsp.enable("elixirls")
 local cmp = require("cmp")
 local luasnip = require("luasnip")
 require("luasnip.loaders.from_vscode").lazy_load()
+require("luasnip.loaders.from_vscode").lazy_load({ paths = { vim.fn.stdpath("config") .. "/snippets" } })
 
 cmp.setup({
   snippet = {
@@ -428,11 +505,30 @@ map("n", "<leader>fg", function() require("telescope.builtin").live_grep({ addit
 map("n", "<leader>sw", "<cmd>Telescope buffers<CR>", opts)
 
 -- Buffer navigation (Zed: pane::ActivateNextItem / ActivatePreviousItem)
-map("n", "<leader>n", ":bnext<CR>", opts)
-map("n", "<leader>p", ":bprevious<CR>", opts)
+map("n", "<leader>n", "<cmd>BufferLineCycleNext<CR>", opts)
+map("n", "<leader>p", "<cmd>BufferLineCyclePrev<CR>", opts)
 
 -- Close buffer (Zed: shift-B shift-D → pane::CloseActiveItem)
-map("n", "BD", ":bd<CR>", opts)
+-- Switch to nearest code buffer before deleting, to preserve layout
+map("n", "BD", function()
+  local cur = vim.api.nvim_get_current_buf()
+  local win = vim.api.nvim_get_current_win()
+  -- Find another listed, normal file buffer
+  local target = nil
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if buf ~= cur and vim.bo[buf].buflisted and vim.bo[buf].buftype == "" then
+      target = buf
+      break
+    end
+  end
+  -- No file buffer left → create empty [No Name] buffer
+  if not target then
+    target = vim.api.nvim_create_buf(true, false)
+  end
+  -- Pin the window to the target buffer, then delete old one
+  vim.api.nvim_win_set_buf(win, target)
+  pcall(vim.api.nvim_buf_delete, cur, {})
+end, opts)
 
 -- Go back / forward (Zed: pane::GoBack / GoForward)
 map("n", "gb", "<C-o>", opts)
@@ -520,6 +616,95 @@ map("i", "<C-l>", "<Right>", opts)
 
 -- Multi-cursor: \cr → visual cursors (explicit mapping to prevent c operator)
 map("v", "<leader>cr", "<Plug>(VM-Visual-Cursors)", opts)
+
+-- Diffview open/close
+map("n", "gdo", "<cmd>DiffviewOpen<CR>", opts)
+map("n", "gdc", "<cmd>DiffviewClose<CR>", opts)
+
+-- Gitsigns base toggle (HEAD vs master)
+map("n", "gdm", function() require("gitsigns").change_base("master", true) end, opts)
+map("n", "gdh", function() require("gitsigns").reset_base(true) end, opts)
+
+-- Git conflict (\gc prefix)
+map("n", "<leader>gco", "<cmd>GitConflictChooseOurs<CR>", opts)
+map("n", "<leader>gct", "<cmd>GitConflictChooseTheirs<CR>", opts)
+map("n", "<leader>gcb", "<cmd>GitConflictChooseBoth<CR>", opts)
+map("n", "<leader>gc0", "<cmd>GitConflictChooseNone<CR>", opts)
+map("n", "<leader>gcn", "<cmd>GitConflictNextConflict<CR>", opts)
+map("n", "<leader>gcp", "<cmd>GitConflictPrevConflict<CR>", opts)
+map("n", "<leader>gcl", "<cmd>GitConflictListQf<CR>", opts)
+
+-- Go generate (current file's package, run from module root)
+map("n", "<leader>gg", function()
+  local dir = vim.fn.expand("%:.:h")
+  vim.cmd("!go generate ./" .. dir .. "/")
+end, opts)
+
+-- Treesitter folding (\tf prefix)
+map("n", "<leader>tfc", "zc", opts)
+map("n", "<leader>tfo", "zo", opts)
+
+-- Layout preset (<leader>lp)
+-- Left: nvim-tree | Center: code | Right: outline | Far right: claude-code | Bottom: terminal
+map("n", "<leader>lp", function()
+  -- Close all panels first
+  pcall(vim.cmd, "NvimTreeClose")
+  pcall(vim.cmd, "OutlineClose")
+  pcall(function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].buftype == "terminal" then
+        vim.api.nvim_win_close(win, true)
+      end
+    end
+  end)
+
+  -- Single code window
+  vim.cmd("only")
+
+  -- Bottom: toggleterm
+  vim.cmd("botright 15split")
+  vim.cmd("terminal")
+  local term_win = vim.api.nvim_get_current_win()
+  vim.wo[term_win].winfixheight = true
+  vim.cmd("wincmd k") -- back to code
+
+  -- Left: nvim-tree (width 30)
+  vim.cmd("NvimTreeOpen")
+  vim.cmd("vertical resize 30")
+  vim.wo.winfixwidth = true
+  vim.cmd("wincmd l") -- back to code
+
+  -- Right: outline (width 30)
+  vim.cmd("OutlineOpen")
+  vim.defer_fn(function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].filetype == "Outline" then
+        vim.api.nvim_set_current_win(win)
+        vim.cmd("vertical resize 30")
+        vim.wo[win].winfixwidth = true
+        break
+      end
+    end
+
+    -- Far right: claude-code
+    vim.cmd("ClaudeCode")
+    vim.defer_fn(function()
+      -- Focus back to code window
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        local ft = vim.bo[buf].filetype
+        local bt = vim.bo[buf].buftype
+        if ft ~= "NvimTree" and ft ~= "Outline" and bt ~= "terminal"
+          and vim.api.nvim_win_get_config(win).relative == "" then
+          vim.api.nvim_set_current_win(win)
+          break
+        end
+      end
+    end, 200)
+  end, 200)
+end, opts)
 
 -- Disable netrw (nvim-tree replaces it)
 vim.g.loaded_netrw = 1
