@@ -1,0 +1,7 @@
+macos-option-as-alt = left
+
+font-family = 3270 Nerd Font Mono
+font-family = 배달의민족 한나체 Air
+font-size = 13
+
+term = xterm-256color
