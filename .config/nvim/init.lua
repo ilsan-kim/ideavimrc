@@ -109,6 +109,9 @@ require("lazy").setup({
     dependencies = { "nvim-treesitter/nvim-treesitter" },
     opts = {
       max_lines = 3,
+      multiwindow = true,
+      -- Float defaults to zindex 50 (Telescope preview); bump above it.
+      zindex = 55,
     },
   },
 
@@ -265,7 +268,7 @@ require("lazy").setup({
           }),
         },
         discovery = {
-          enabled = false,
+          enabled = true,
         },
       })
     end,
@@ -280,6 +283,7 @@ require("lazy").setup({
         window = {
           position = "vertical",
           split_ratio = 0.3,
+          start_in_normal_mode = true,
         },
         keymaps = {
           toggle = {
@@ -482,6 +486,27 @@ require("nvim-tree").setup({
 })
 
 -- =============================================================================
+-- Telescope preview: line numbers + treesitter (for sticky context)
+-- =============================================================================
+vim.api.nvim_create_autocmd("User", {
+  pattern = "TelescopePreviewerLoaded",
+  callback = function(args)
+    vim.wo.number = true
+    -- Telescope attaches the preview buf via noautocmd, so FileType doesn't
+    -- fire and treesitter-context can't register it as attached. Setting
+    -- filetype here fires FileType (also starts treesitter via our handler).
+    local ft = args.data and args.data.filetype
+    if ft and ft ~= "" and vim.bo[args.buf].filetype ~= ft then
+      vim.bo[args.buf].filetype = ft
+    end
+    -- treesitter-context only refreshes inactive windows on WinResized.
+    vim.schedule(function()
+      pcall(vim.api.nvim_exec_autocmds, "WinResized", {})
+    end)
+  end,
+})
+
+-- =============================================================================
 -- Keymaps: Zed-compatible
 -- =============================================================================
 local map = vim.keymap.set
@@ -575,11 +600,48 @@ end, opts)
 -- Neotest keymaps (GoLand-style test runner)
 map("n", "<leader>tr", function() require("neotest").run.run() end, opts)                -- 커서 위치 테스트 실행
 map("n", "<leader>tf", function() require("neotest").run.run(vim.fn.expand("%")) end, opts) -- 현재 파일 테스트 실행
-map("n", "<leader>to", function() require("neotest").output_panel.toggle() end, opts)    -- 출력 패널 토글
+map("n", "<leader>to", function() require("neotest").output.open({ enter = true }) end, opts) -- 출력 모달
 map("n", "<leader>ts", function() require("neotest").summary.toggle() end, opts)         -- 테스트 요약 패널 토글
 map("n", "<leader>go", function()                                                       -- go run . (현재 파일의 패키지)
   local dir = vim.fn.expand("%:p:h")
   require("toggleterm").exec("cd " .. dir .. " && go run .", 1)
+end, opts)
+
+-- Go: pick a package via gopls and add its import (handles same-name pkgs)
+map("n", "<leader>ga", function()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if vim.bo[bufnr].filetype ~= "go" then
+    vim.notify("Not a Go buffer", vim.log.levels.WARN)
+    return
+  end
+  local uri = vim.uri_from_bufnr(bufnr)
+  vim.lsp.buf_request(bufnr, "workspace/executeCommand", {
+    command = "gopls.list_known_packages",
+    arguments = { { URI = uri } },
+  }, function(err, result)
+    if err or not result then
+      vim.notify("gopls.list_known_packages failed: " .. vim.inspect(err), vim.log.levels.ERROR)
+      return
+    end
+    local pkgs = result.Packages or {}
+    require("telescope.pickers").new({}, {
+      prompt_title = "Go: Add Import",
+      finder = require("telescope.finders").new_table({ results = pkgs }),
+      sorter = require("telescope.config").values.generic_sorter({}),
+      attach_mappings = function(prompt_bufnr)
+        require("telescope.actions").select_default:replace(function()
+          local sel = require("telescope.actions.state").get_selected_entry()
+          require("telescope.actions").close(prompt_bufnr)
+          if not sel then return end
+          vim.lsp.buf_request(bufnr, "workspace/executeCommand", {
+            command = "gopls.add_import",
+            arguments = { { URI = uri, ImportPath = sel[1] } },
+          })
+        end)
+        return true
+      end,
+    }):find()
+  end)
 end, opts)
 
 -- Redo (Zed: editor::Redo)
@@ -624,6 +686,8 @@ map("n", "gdc", "<cmd>DiffviewClose<CR>", opts)
 -- Gitsigns base toggle (HEAD vs master)
 map("n", "gdm", function() require("gitsigns").change_base("master", true) end, opts)
 map("n", "gdh", function() require("gitsigns").reset_base(true) end, opts)
+-- Preview hunk under cursor in a floating window
+map("n", "<leader>gph", function() require("gitsigns").preview_hunk() end, opts)
 
 -- Git conflict (\gc prefix)
 map("n", "<leader>gco", "<cmd>GitConflictChooseOurs<CR>", opts)
@@ -675,14 +739,14 @@ map("n", "<leader>lp", function()
   vim.wo.winfixwidth = true
   vim.cmd("wincmd l") -- back to code
 
-  -- Right: outline (width 30)
+  -- Right: outline (width 60)
   vim.cmd("OutlineOpen")
   vim.defer_fn(function()
     for _, win in ipairs(vim.api.nvim_list_wins()) do
       local buf = vim.api.nvim_win_get_buf(win)
       if vim.bo[buf].filetype == "Outline" then
         vim.api.nvim_set_current_win(win)
-        vim.cmd("vertical resize 30")
+        vim.cmd("vertical resize 60")
         vim.wo[win].winfixwidth = true
         break
       end
@@ -704,6 +768,99 @@ map("n", "<leader>lp", function()
       end
     end, 200)
   end, 200)
+end, opts)
+
+-- Layout preset (<leader>lp2): same as <leader>lp but neotest summary instead of outline
+map("n", "<leader>lp2", function()
+  pcall(vim.cmd, "NvimTreeClose")
+  pcall(vim.cmd, "OutlineClose")
+  pcall(function() require("neotest").summary.close() end)
+  pcall(function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].buftype == "terminal" then
+        vim.api.nvim_win_close(win, true)
+      end
+    end
+  end)
+
+  vim.cmd("only")
+
+  vim.cmd("botright 15split")
+  vim.cmd("terminal")
+  local term_win = vim.api.nvim_get_current_win()
+  vim.wo[term_win].winfixheight = true
+  vim.cmd("wincmd k")
+
+  vim.cmd("NvimTreeOpen")
+  vim.cmd("vertical resize 30")
+  vim.wo.winfixwidth = true
+  vim.cmd("wincmd l")
+
+  require("neotest").summary.open()
+  vim.defer_fn(function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].filetype == "neotest-summary" then
+        vim.api.nvim_set_current_win(win)
+        vim.cmd("vertical resize 60")
+        vim.wo[win].winfixwidth = true
+        break
+      end
+    end
+
+    vim.cmd("ClaudeCode")
+    vim.defer_fn(function()
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        local ft = vim.bo[buf].filetype
+        local bt = vim.bo[buf].buftype
+        if ft ~= "NvimTree" and ft ~= "neotest-summary" and bt ~= "terminal"
+          and vim.api.nvim_win_get_config(win).relative == "" then
+          vim.api.nvim_set_current_win(win)
+          break
+        end
+      end
+    end, 200)
+  end, 200)
+end, opts)
+
+-- Move cursor to specific view (<leader>m*v)
+local function focus_win(matcher)
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_config(win).relative == "" then
+      local buf = vim.api.nvim_win_get_buf(win)
+      if matcher(buf) then
+        vim.api.nvim_set_current_win(win)
+        return
+      end
+    end
+  end
+end
+map("n", "<leader>mcv", function()                                                       -- code buffer
+  focus_win(function(buf)
+    local ft, bt = vim.bo[buf].filetype, vim.bo[buf].buftype
+    return bt == "" and ft ~= "NvimTree" and ft ~= "Outline" and ft ~= "claude-code"
+  end)
+end, opts)
+map("n", "<leader>mfv", function()                                                       -- file tree
+  focus_win(function(buf) return vim.bo[buf].filetype == "NvimTree" end)
+end, opts)
+local function is_claude_code(buf)
+  if vim.bo[buf].buftype ~= "terminal" then return false end
+  return vim.api.nvim_buf_get_name(buf):match("claude%-code") ~= nil
+end
+map("n", "<leader>mav", function()                                                       -- agentic code (claude-code)
+  focus_win(is_claude_code)
+end, opts)
+map("n", "<leader>mov", function()                                                       -- outline or test summary (whichever is open)
+  focus_win(function(buf)
+    local ft = vim.bo[buf].filetype
+    return ft == "Outline" or ft == "neotest-summary"
+  end)
+end, opts)
+map("n", "<leader>mtv", function()                                                       -- terminal (excludes claude-code)
+  focus_win(function(buf) return vim.bo[buf].buftype == "terminal" and not is_claude_code(buf) end)
 end, opts)
 
 -- Disable netrw (nvim-tree replaces it)
